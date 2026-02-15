@@ -1,16 +1,35 @@
-# React + Vite
+# 🎴 CardCreator
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**CardCreator** is a premium, high-performance web application designed for professionals and creators to design, customize, and print beautiful cards instantly. Built with React and Vite, it offers a seamless, real-time editing experience.
 
-Currently, two official plugins are available:
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fgitosaurusrex%2FCardCreator)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## ✨ Features
 
-## React Compiler
+- **Real-time Rich Text Editing**: Powered by Tiptap for a smooth, intuitive editing experience.
+- **Dynamic Layouts**: Switch between horizontal and vertical orientations with ease.
+- **Universal Styling**: Apply appearance settings to all cards or customize them individually.
+- **Media Integration**: Upload images directly or use external URLs with overlay captions.
+- **Print-Ready**: Optimized print styles ensuring high-quality physical output.
+- **Export/Import**: Save your work as JSON and resume whenever you want.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 🚀 Quick Start
 
-## Expanding the ESLint configuration
+### Online
+Click the **Deploy with Vercel** button above to launch your own instance in seconds!
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Local Development
+1. Clone the repository: `git clone https://github.com/gitosaurusrex/CardCreator.git`
+2. Install dependencies: `npm install`
+3. Run dev server: `npm run dev`
+
+## 🛠️ Technology Stack
+
+- **Framework**: React 19
+- **Bundler**: Vite 7
+- **Styling**: Vanilla CSS (Custom tokens)
+- **Icons**: Lucide React
+- **Editor**: Tiptap
+
+---
+Developed by [gitosaurusrex](https://github.com/gitosaurusrex)
