@@ -88,15 +88,32 @@ body {
 
 .ribbon-bar {
   height: var(--ribbon-height);
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
   padding: 0 24px;
   gap: 16px;
   overflow-x: auto;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
   flex-shrink: 0;
+  z-index: 100;
+}
+
+/* Custom Scrollbar for Ribbon */
+.ribbon-bar::-webkit-scrollbar {
+  height: 4px;
+}
+.ribbon-bar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ribbon-bar::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+}
+
 }
 
 .ribbon-item {
@@ -483,13 +500,14 @@ body {
 
 .viewport {
   flex-grow: 1;
-  background: #e5e5e7;
+  background: radial-gradient(circle at center, #f0f0f2 0%, #dcdce0 100%);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px;
+  padding: 60px;
   overflow: auto;
 }
+
 
 /* Card Styling */
 .card-preview {
@@ -506,8 +524,12 @@ body {
 }
 
 .shadow-ambient {
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  box-shadow: 
+    0 30px 60px -12px rgba(50, 50, 93, 0.25),
+    0 18px 36px -18px rgba(0, 0, 0, 0.3),
+    0 -12px 36px -8px rgba(0, 0, 0, 0.025);
 }
+
 
 .card-preview.vertical {
   flex-direction: column;
