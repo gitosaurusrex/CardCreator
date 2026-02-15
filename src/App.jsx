@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Printer, Columns2, Rows2, Image as ImageIcon, Palette, Type, Download, Upload, Bold, Italic, Palette as ColorIcon } from 'lucide-react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
 
-const TiptapEditor = ({ value, onChange, placeholder, minHeight = '100px' }) => {
+const TiptapEditor = ({ value, onChange, minHeight = '100px' }) => {
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -222,7 +222,7 @@ function App() {
             setCards(importedCards);
             setActiveCardId(importedCards[0].id);
           }
-        } catch (err) {
+        } catch {
           alert('Failed to import JSON file. Please make sure it is a valid export.');
         }
       };
@@ -254,7 +254,7 @@ function App() {
       <div className="app-container no-print">
         {/* Ribbon Bar (Top) */}
         <div className="ribbon-bar no-print">
-          {cards.map((card, index) => (
+          {cards.map((card) => (
             <div
               key={card.id}
               onClick={() => setActiveCardId(card.id)}
