@@ -906,8 +906,10 @@ body {
 }
 
 .close-project-btn:hover {
-  background: #ff3b30;
+  background: var(--accent-color);
   color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);
 }
 
 .animate-spin {
@@ -965,12 +967,15 @@ body {
   }
 
   .ribbon-actions {
-    width: 100%;
-    justify-content: space-between;
+    width: auto;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 8px;
     margin-right: 0;
-    padding-top: 8px;
-    border-top: 1px solid rgba(0, 0, 0, 0.05);
-    flex-wrap: wrap;
+    padding-top: 0;
+    border-top: none;
+    flex-wrap: nowrap;
   }
 
   .export-input {
@@ -1022,7 +1027,7 @@ body {
   .ribbon-bar .flex.items-center.gap-3.ml-4 {
     border-left: none;
     padding-left: 0;
-    margin-top: 4px;
+    margin-top: 0;
     width: auto;
     justify-content: flex-end;
   }
@@ -1079,6 +1084,16 @@ body {
     padding: 10px 16px;
     flex: 1;
     justify-content: center;
+  }
+
+  .ribbon-actions {
+    width: 100%;
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
   }
 
   .ribbon-bar .flex.items-center.gap-3.ml-4 {

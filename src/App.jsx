@@ -574,18 +574,18 @@ function App() {
                 </div>
                 <button
                   onClick={() => exportToJson()}
-                  className="action-btn-secondary"
+                  className="close-project-btn"
                   title="Export to JSON"
                 >
-                  <Download size={18} />
+                  <Download size={18} /> Export
                 </button>
-                <label className="action-btn-secondary cursor-pointer" title="Import from JSON">
-                  <Upload size={18} />
+                <label className="close-project-btn cursor-pointer" title="Import from JSON">
+                  <Upload size={18} /> Import
                   <input type="file" accept=".json" onChange={importFromJson} className="hidden" />
                 </label>
                 <button
                   onClick={closeProject}
-                  className="close-project-btn ml-2"
+                  className="close-project-btn"
                   title="Close Project"
                 >
                   <X size={18} /> Close
