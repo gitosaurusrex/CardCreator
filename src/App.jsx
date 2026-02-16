@@ -326,12 +326,14 @@ function App() {
       borderStyle: card.borderStyle,
       borderColor: card.borderColor,
       height: `${card.cardHeight}px`,
+      gap: `${card.contentPadding}px`,
     };
   };
 
   const getContentStyles = (card) => {
     return {
-      justifyContent: card.verticalAlign === 'top' ? 'flex-start' : (card.verticalAlign === 'bottom' ? 'flex-end' : 'center')
+      justifyContent: card.verticalAlign === 'top' ? 'flex-start' : (card.verticalAlign === 'bottom' ? 'flex-end' : 'center'),
+      padding: `${card.contentPadding}px`
     };
   };
 
@@ -602,7 +604,7 @@ function App() {
                     </div>
                     <div className="grid grid-cols-2 gap-3 mt-2">
                       <div className="editor-field-group"><div className="editor-rich-label">Outer Padding</div><input type="number" value={activeCard.cardPadding} onChange={(e) => updateCard(activeCardId, { cardPadding: parseInt(e.target.value) })} className="editor-input" /></div>
-                      <div className="editor-field-group"><div className="editor-rich-label">Inner Gap</div><input type="number" value={activeCard.contentPadding} onChange={(e) => updateCard(activeCardId, { contentPadding: parseInt(e.target.value) })} className="editor-input" /></div>
+                      <div className="editor-field-group"><div className="editor-rich-label">Inner Spacing</div><input type="number" value={activeCard.contentPadding} onChange={(e) => updateCard(activeCardId, { contentPadding: parseInt(e.target.value) })} className="editor-input" /></div>
                     </div>
                   </section>
 
