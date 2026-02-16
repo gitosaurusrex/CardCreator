@@ -468,6 +468,32 @@ body {
   box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
 }
 
+.upload-label {
+  display: block;
+  cursor: pointer;
+}
+
+.upload-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  background: var(--input-bg);
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  color: #888;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.upload-label:hover .upload-placeholder {
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+  background: #f0f7ff;
+}
+
 .editor-field-group {
   display: flex;
   flex-direction: column;

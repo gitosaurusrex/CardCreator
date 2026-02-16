@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Printer, Columns2, Rows2, Image as ImageIcon, Palette, Type, Bold, Italic, Palette as ColorIcon, FolderOpen, ExternalLink, X, Clock, Lock, Cloud, Check, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Printer, Columns2, Rows2, Image as ImageIcon, Palette, Type, Bold, Italic, Palette as ColorIcon, FolderOpen, ExternalLink, X, Clock, Lock, Cloud, Check, AlertCircle, Upload } from 'lucide-react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Color } from '@tiptap/extension-color';
@@ -363,6 +363,60 @@ function App() {
     }
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // 1. Basic validation
+    if (!file.type.startsWith('image/')) {
+      alert('Please upload an image file');
+      return;
+    }
+
+    if (file.size > 8 * 1024 * 1024) {
+      alert('File is too large. Max 8MB.');
+      return;
+    }
+
+    setSaveStatus('saving');
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64 = event.target.result;
+        const token = await getToken();
+
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            data: base64,
+            contentType: file.type,
+            fileName: file.name
+          }),
+        });
+
+        const data = await res.json();
+        if (data.url) {
+          updateCard(activeCardId, { imageUrl: data.url });
+          setSaveStatus('saved');
+        } else {
+          console.error("Upload failed:", data);
+          setSaveStatus('error');
+          alert('Upload failed: ' + (data.error || 'Unknown error'));
+        }
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Upload error:", err);
+      setSaveStatus('error');
+      alert('Upload system error');
+    }
+  };
+
 
 
   const getCardStyles = (card) => {
@@ -605,6 +659,21 @@ function App() {
 
                   <section className="editor-section">
                     <label className="section-label"><ImageIcon size={16} /> Media</label>
+                    <div className="editor-field-group">
+                      <div className="editor-rich-label">Local Upload</div>
+                      <label className="upload-label">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="hidden"
+                        />
+                        <div className="upload-placeholder">
+                          <Upload size={18} />
+                          <span>Upload Image</span>
+                        </div>
+                      </label>
+                    </div>
                     <div className="editor-field-group">
                       <div className="editor-rich-label">Source URL</div>
                       <div className="flex gap-2">
