@@ -588,10 +588,19 @@ body {
 
 .card-image {
   flex: 1;
-  background-size: cover;
-  background-repeat: no-repeat;
   min-width: 0;
   position: relative;
+  overflow: hidden;
+  display: block;
+}
+
+.card-image-content {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
 }
 
 .card-caption-overlay {

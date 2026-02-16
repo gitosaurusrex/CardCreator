@@ -850,14 +850,17 @@ function App() {
                   style={getCardStyles(activeCard)}
                 >
                   {activeCard.imageUrl && (
-                    <div
-                      className="card-image"
-                      style={{
-                        backgroundImage: `url(${activeCard.imageUrl})`,
-                        backgroundPosition: activeCard.imagePosition,
-                        borderRadius: `${activeCard.imageRadius}px`
-                      }}
-                    >
+                    <div className="card-image">
+                      <img
+                        src={activeCard.imageUrl}
+                        alt=""
+                        loading="eager"
+                        className="card-image-content"
+                        style={{
+                          objectPosition: activeCard.imagePosition,
+                          borderRadius: `${activeCard.imageRadius}px`
+                        }}
+                      />
                       {activeCard.caption && (
                         <div className="card-caption-overlay">
                           {activeCard.caption}
@@ -899,14 +902,17 @@ function App() {
                 style={getCardStyles(card)}
               >
                 {card.imageUrl && (
-                  <div
-                    className="card-image"
-                    style={{
-                      backgroundImage: `url(${card.imageUrl})`,
-                      backgroundPosition: card.imagePosition,
-                      borderRadius: `${card.imageRadius}px`
-                    }}
-                  >
+                  <div className="card-image">
+                    <img
+                      src={card.imageUrl}
+                      alt=""
+                      loading="eager"
+                      className="card-image-content"
+                      style={{
+                        objectPosition: card.imagePosition,
+                        borderRadius: `${card.imageRadius}px`
+                      }}
+                    />
                     {card.caption && <div className="card-caption-overlay">{card.caption}</div>}
                   </div>
                 )}
