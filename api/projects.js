@@ -6,13 +6,14 @@ export default async function handler(req, res) {
 
     try {
         const secretKey = process.env.CLERK_SECRET_KEY || process.env.CLERK_API_KEY;
+        const publishableKey = process.env.CLERK_PUBLISHABLE_KEY || process.env.VITE_CLERK_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
         if (!secretKey) {
-            return res.status(500).send(JSON.stringify({ error: "Configuration Error", details: "Clerk Key missing" }));
+            return res.status(500).send(JSON.stringify({ error: "Configuration Error", details: "Clerk Secret Key missing" }));
         }
 
-        const clerkClient = createClerkClient({ secretKey });
+        const clerkClient = createClerkClient({ secretKey, publishableKey });
 
-        // Convert Node request to a Standard Web Request
         const protocol = req.headers['x-forwarded-proto'] || 'https';
         const hostname = req.headers['host'];
         const fullUrl = new URL(req.url, `${protocol}://${hostname}`).toString();
@@ -72,8 +73,7 @@ export default async function handler(req, res) {
         console.error("Projects API Error:", error);
         return res.status(500).send(JSON.stringify({
             error: "Internal Server Error",
-            message: error.message,
-            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+            message: error.message
         }));
     }
 }
