@@ -177,7 +177,7 @@ function App() {
 
 
   const activeProject = projects.find(p => p.id === currentProjectId);
-  const { getToken } = useAuth();
+  const { getToken, userId } = useAuth();
 
   // Initial load from Cloud (with LocalStorage fallback)
   useEffect(() => {
@@ -203,7 +203,7 @@ function App() {
       }
     };
     loadProjects();
-  }, [getToken]);
+  }, [userId, getToken]);
 
   // Sync cards state with active project
   useEffect(() => {
@@ -279,7 +279,7 @@ function App() {
 
   const createProject = () => {
     const newProject = {
-      id: Date.now(),
+      id: Date.now().toString(),
       name: `Untitled Project ${projects.length + 1}`,
       cards: [INITIAL_CARD],
       lastModified: Date.now()
