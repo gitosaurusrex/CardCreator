@@ -923,3 +923,166 @@ body {
     transform: rotate(360deg);
   }
 }
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  :root {
+    --ribbon-height: auto;
+    --editor-width: 100%;
+  }
+
+  body {
+    overflow: auto;
+  }
+
+  .app-container {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .ribbon-bar {
+    padding: 12px;
+    flex-wrap: wrap;
+    height: auto;
+    gap: 8px;
+    position: sticky;
+    top: 0;
+  }
+
+  .ribbon-item,
+  .add-card-btn {
+    width: 60px;
+    height: 40px;
+  }
+
+  .ribbon-item-preview {
+    font-size: 6px;
+    padding: 4px;
+  }
+
+  .spacer {
+    display: none;
+  }
+
+  .ribbon-bar .flex.gap-2.mr-4 {
+    width: 100%;
+    justify-content: space-between;
+    margin-right: 0;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+  }
+
+  .export-input {
+    width: 100px;
+  }
+
+  .export-input:focus {
+    width: 120px;
+  }
+
+  .main-content {
+    flex-direction: column;
+    overflow: visible;
+  }
+
+  .editor-panel {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+    padding: 16px;
+    overflow: visible;
+  }
+
+  /* Container for the scaled card to maintain correct layout height */
+  .viewport {
+    padding: 10px;
+    min-height: 320px;
+    overflow: hidden;
+    display: flex;
+    align-items: flex-start;
+    /* Start from top on mobile */
+    justify-content: center;
+    background: #e5e5e7;
+  }
+
+  .card-preview {
+    transform-origin: center top;
+    transform: scale(calc((100vw - 32px) / 794));
+    margin-bottom: calc(530px * (1 - (100vw - 32px) / 794) * -1);
+    /* Compensate for scale height */
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  }
+
+  .card-preview.vertical {
+    transform: scale(calc((100vw - 32px) / 460));
+    margin-bottom: calc(700px * (1 - (100vw - 32px) / 460) * -1);
+  }
+
+  .ribbon-bar .flex.items-center.gap-3.ml-4 {
+    border-left: none;
+    padding-left: 0;
+    margin-top: 4px;
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .project-selector-overlay {
+    padding: 40px 16px;
+  }
+
+  .selector-title {
+    font-size: 42px;
+    letter-spacing: -1px;
+  }
+
+  .projects-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .project-card {
+    padding: 24px;
+    border-radius: 20px;
+  }
+
+  .project-meta {
+    font-size: 14px;
+    color: #666;
+  }
+}
+
+@media (max-width: 480px) {
+  .ribbon-bar {
+    padding: 8px;
+  }
+
+  .tiptap-toolbar {
+    flex-wrap: wrap;
+    padding: 6px;
+  }
+
+  .tiptap-tool {
+    width: 32px;
+    height: 32px;
+  }
+
+  .print-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 16px;
+  }
+
+  .close-project-btn {
+    padding: 10px 16px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .ribbon-bar .flex.items-center.gap-3.ml-4 {
+    justify-content: center;
+    padding: 12px 0;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+  }
+}
