@@ -1,69 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Printer, Columns2, Rows2, Image as ImageIcon, Palette, Type, Bold, Italic, Palette as ColorIcon, FolderOpen, ExternalLink, X, Clock, Lock, Cloud, Check, AlertCircle, Upload } from 'lucide-react';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import { Color } from '@tiptap/extension-color';
-import { TextStyle } from '@tiptap/extension-text-style';
 import { SignedIn, SignedOut, SignInButton, UserButton, useAuth } from '@clerk/clerk-react';
-
-const TiptapEditor = ({ value, onChange, minHeight = '100px' }) => {
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      TextStyle,
-      Color,
-    ],
-    content: value,
-    onUpdate: ({ editor }) => {
-      onChange(editor.getHTML());
-    },
-    editorProps: {
-      attributes: {
-        class: 'tiptap-editor-content',
-        style: `min-height: ${minHeight}; outline: none;`,
-      },
-    },
-  });
-
-  useEffect(() => {
-    if (editor && value !== editor.getHTML()) {
-      editor.commands.setContent(value);
-    }
-  }, [value, editor]);
-
-  if (!editor) return null;
-
-  return (
-    <div className="tiptap-container">
-      <div className="tiptap-toolbar">
-        <button
-          onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`tiptap-tool ${editor.isActive('bold') ? 'active' : ''}`}
-          type="button"
-        >
-          <Bold size={14} />
-        </button>
-        <button
-          onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`tiptap-tool ${editor.isActive('italic') ? 'active' : ''}`}
-          type="button"
-        >
-          <Italic size={14} />
-        </button>
-        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded">
-          <input
-            type="color"
-            onInput={e => editor.chain().focus().setColor(e.target.value).run()}
-            value={editor.getAttributes('textStyle').color || '#000000'}
-            className="tiptap-color-picker"
-            title="Text Color"
-          />
-        </div>
-      </div>
-      <EditorContent editor={editor} />
-    </div>
-  );
-};
 
 const FONTS = [
   { label: 'Default', value: 'inherit', className: '' },
@@ -120,8 +57,6 @@ const INITIAL_CARD = {
   selectedForPrint: true
 };
 
-const stripPTags = (html) => html ? html.replace(/<\/?p[^>]*>/g, '') : '';
-
 const STORAGE_KEY = 'tilemaker_projects_v1';
 
 const ProjectSelector = ({ projects, onSelect, onCreate, onDelete }) => {
@@ -173,13 +108,11 @@ function App() {
   const [cards, setCards] = useState([INITIAL_CARD]);
   const [activeCardId, setActiveCardId] = useState(INITIAL_CARD.id);
   const [universalConfig, setUniversalConfig] = useState(false);
-  const [saveStatus, setSaveStatus] = useState('saved'); // 'saved', 'saving', 'error'
-
+  const [saveStatus, setSaveStatus] = useState('saved');
 
   const activeProject = projects.find(p => p.id === currentProjectId);
   const { getToken, userId } = useAuth();
 
-  // Initial load from Cloud (with LocalStorage fallback)
   useEffect(() => {
     const loadProjects = async () => {
       try {
@@ -205,31 +138,20 @@ function App() {
     loadProjects();
   }, [userId, getToken]);
 
-  // Sync cards state with active project
   useEffect(() => {
     if (activeProject && currentProjectId) {
-      // Only update if IDs differ or cards are reference-different
-      // to avoid unnecessary resets
       setCards(activeProject.cards);
       setActiveCardId(activeProject.cards[0]?.id || INITIAL_CARD.id);
     }
   }, [currentProjectId]);
 
-  // Auto-save logic (Debounced)
   useEffect(() => {
     if (!currentProjectId) return;
-
-    // Changes detected, set status to unsaved immediately
     setSaveStatus('unsaved');
-
     const timer = setTimeout(async () => {
-      // 1. Save to Local Storage (Always)
       localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
-
-      // 2. Save to Cloud (If authenticated)
       const active = projects.find(p => p.id === currentProjectId);
       if (!active) return;
-
       setSaveStatus('saving');
       try {
         const token = await getToken();
@@ -237,7 +159,6 @@ function App() {
           setSaveStatus('error');
           return;
         }
-
         const res = await fetch('/api/projects', {
           method: 'POST',
           headers: {
@@ -246,7 +167,6 @@ function App() {
           },
           body: JSON.stringify(active),
         });
-
         if (res.ok) {
           setSaveStatus('saved');
         } else {
@@ -259,18 +179,14 @@ function App() {
         setSaveStatus('error');
       }
     }, 1500);
-
     return () => clearTimeout(timer);
   }, [projects, currentProjectId, getToken]);
 
-  // Update projects list when cards change
   useEffect(() => {
     if (currentProjectId && cards.length > 0) {
-      // Only update projects list if cards actually changed relative to the list
       setProjects(prev => {
         const existing = prev.find(p => p.id === currentProjectId);
         if (existing && existing.cards === cards) return prev;
-
         return prev.map(p =>
           p.id === currentProjectId
             ? { ...p, cards, lastModified: Date.now() }
@@ -297,9 +213,7 @@ function App() {
     }
   };
 
-
   const activeCard = cards.find(c => c.id === activeCardId) || cards[0];
-
 
   const UNIVERSAL_KEYS = [
     'titleFont', 'titleSize', 'textFont', 'textSize',
@@ -325,28 +239,20 @@ function App() {
       id: Date.now(),
       title: `New Card ${cards.length + 1}`
     };
-
     if (universalConfig) {
       UNIVERSAL_KEYS.forEach(key => newCard[key] = activeCard[key]);
     }
-
     setCards([...cards, newCard]);
     setActiveCardId(newCard.id);
   };
 
   const updateCard = (id, updates) => {
     setCards(prevCards => prevCards.map(c => {
-      // If this is the targeted card, apply all updates
-      if (c.id === id) {
-        return { ...c, ...updates };
-      }
-      // If universal is on, apply only the universal updates to other cards
+      if (c.id === id) return { ...c, ...updates };
       if (universalConfig) {
         const universalUpdates = {};
         Object.keys(updates).forEach(key => {
-          if (UNIVERSAL_KEYS.includes(key)) {
-            universalUpdates[key] = updates[key];
-          }
+          if (UNIVERSAL_KEYS.includes(key)) universalUpdates[key] = updates[key];
         });
         return { ...c, ...universalUpdates };
       }
@@ -366,26 +272,20 @@ function App() {
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    // 1. Basic validation
     if (!file.type.startsWith('image/')) {
       alert('Please upload an image file');
       return;
     }
-
     if (file.size > 8 * 1024 * 1024) {
       alert('File is too large. Max 8MB.');
       return;
     }
-
     setSaveStatus('saving');
-
     try {
       const reader = new FileReader();
       reader.onload = async (event) => {
         const base64 = event.target.result;
         const token = await getToken();
-
         const res = await fetch('/api/upload', {
           method: 'POST',
           headers: {
@@ -398,7 +298,6 @@ function App() {
             fileName: file.name
           }),
         });
-
         const data = await res.json();
         if (data.url) {
           updateCard(activeCardId, { imageUrl: data.url });
@@ -416,8 +315,6 @@ function App() {
       alert('Upload system error');
     }
   };
-
-
 
   const getCardStyles = (card) => {
     return {
@@ -500,7 +397,6 @@ function App() {
           />
         ) : (
           <div className="app-container no-print">
-            {/* Ribbon Bar (Top) */}
             <div className="ribbon-bar no-print">
               {cards.map((card) => (
                 <div
@@ -508,7 +404,7 @@ function App() {
                   onClick={() => setActiveCardId(card.id)}
                   className={`ribbon-item ${activeCardId === card.id ? 'active' : ''}`}
                 >
-                  <div className="ribbon-item-preview" dangerouslySetInnerHTML={{ __html: stripPTags(card.title) }} />
+                  <div className="ribbon-item-preview">{card.title}</div>
                   <input
                     type="checkbox"
                     checked={card.selectedForPrint !== false}
@@ -516,18 +412,12 @@ function App() {
                     className="print-checkbox"
                     title="Include in print"
                   />
-                  <button
-                    onClick={(e) => { e.stopPropagation(); deleteCard(card.id); }}
-                    className="delete-card-btn"
-                  >
+                  <button onClick={(e) => { e.stopPropagation(); deleteCard(card.id); }} className="delete-card-btn">
                     <Trash2 size={12} />
                   </button>
                 </div>
               ))}
-              <button
-                onClick={addCard}
-                className="add-card-btn"
-              >
+              <button onClick={addCard} className="add-card-btn">
                 <Plus size={24} />
               </button>
               <div className="spacer"></div>
@@ -542,53 +432,33 @@ function App() {
                     title="Rename Project"
                   />
                 </div>
-                <button
-                  onClick={closeProject}
-                  className="close-project-btn"
-                  title="Close Project"
-                >
+                <button onClick={closeProject} className="close-project-btn" title="Close Project">
                   <X size={18} /> Close
                 </button>
                 <div className="status-indicator flex items-center gap-2 px-3 py-1 bg-gray-50 rounded-full text-[10px] font-bold text-gray-500 whitespace-nowrap border border-gray-100">
                   {saveStatus === 'unsaved' && (
-                    <>
-                      <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
-                      <span>Pending Sync...</span>
-                    </>
+                    <><div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div><span>Pending Sync...</span></>
                   )}
                   {saveStatus === 'saving' && (
-                    <>
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                      <span>Syncing...</span>
-                    </>
+                    <><div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div><span>Syncing...</span></>
                   )}
                   {saveStatus === 'saved' && (
-                    <>
-                      <Check size={12} className="text-green-500" />
-                      <span>Synced to Cloud</span>
-                    </>
+                    <><Check size={12} className="text-green-500" /><span>Synced to Cloud</span></>
                   )}
                   {saveStatus === 'error' && (
-                    <>
-                      <AlertCircle size={12} className="text-red-400" />
-                      <span>Sync Paused (Local Only)</span>
-                    </>
+                    <><AlertCircle size={12} className="text-red-400" /><span>Sync Paused (Local Only)</span></>
                   )}
                 </div>
                 <div className="flex items-center gap-3 ml-4 border-l pl-4 border-gray-200">
                   <UserButton afterSignOutUrl="/" />
                 </div>
               </div>
-              <button
-                onClick={() => window.print()}
-                className="print-btn"
-              >
+              <button onClick={() => window.print()} className="print-btn">
                 <Printer size={20} /> Print Cards
               </button>
             </div>
 
             <div className="main-content">
-              {/* Editor Panel (Left) */}
               <div className="editor-panel no-print">
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="editor-title mb-0">Card Editor</h2>
@@ -597,9 +467,7 @@ function App() {
                     className={`universal-toggle ${universalConfig ? 'active' : ''}`}
                     title="Apply appearance settings to all cards"
                   >
-                    <div className="toggle-track">
-                      <div className="toggle-thumb"></div>
-                    </div>
+                    <div className="toggle-track"><div className="toggle-thumb"></div></div>
                     <span className="text-[10px] font-bold uppercase tracking-wider">Universal</span>
                   </div>
                 </div>
@@ -612,23 +480,16 @@ function App() {
                       <div className="flex justify-between items-center mb-1">
                         <div className="editor-rich-label mb-0">Title</div>
                         <div className="flex gap-1 items-center">
-                          <FontSelector
-                            value={activeCard.titleFont}
-                            onChange={(val) => updateCard(activeCardId, { titleFont: val })}
-                            className="!w-28 !p-1 !text-[10px]"
-                          />
-                          <input
-                            type="number"
-                            value={activeCard.titleSize}
-                            onChange={(e) => updateCard(activeCardId, { titleSize: parseInt(e.target.value) })}
-                            className="editor-input !w-12 !p-1 !text-[10px]"
-                          />
+                          <FontSelector value={activeCard.titleFont} onChange={(val) => updateCard(activeCardId, { titleFont: val })} className="!w-28 !p-1 !text-[10px]" />
+                          <input type="number" value={activeCard.titleSize} onChange={(e) => updateCard(activeCardId, { titleSize: parseInt(e.target.value) })} className="editor-input !w-12 !p-1 !text-[10px]" />
                         </div>
                       </div>
-                      <TiptapEditor
+                      <input
+                        type="text"
                         value={activeCard.title}
-                        onChange={(content) => updateCard(activeCardId, { title: content })}
-                        minHeight="50px"
+                        onChange={(e) => updateCard(activeCardId, { title: e.target.value })}
+                        className="editor-input"
+                        placeholder="Card title..."
                       />
                     </div>
 
@@ -636,23 +497,16 @@ function App() {
                       <div className="flex justify-between items-center mb-1">
                         <div className="editor-rich-label mb-0">Body Text</div>
                         <div className="flex gap-1 items-center">
-                          <FontSelector
-                            value={activeCard.textFont}
-                            onChange={(val) => updateCard(activeCardId, { textFont: val })}
-                            className="!w-28 !p-1 !text-[10px]"
-                          />
-                          <input
-                            type="number"
-                            value={activeCard.textSize}
-                            onChange={(e) => updateCard(activeCardId, { textSize: parseInt(e.target.value) })}
-                            className="editor-input !w-12 !p-1 !text-[10px]"
-                          />
+                          <FontSelector value={activeCard.textFont} onChange={(val) => updateCard(activeCardId, { textFont: val })} className="!w-28 !p-1 !text-[10px]" />
+                          <input type="number" value={activeCard.textSize} onChange={(e) => updateCard(activeCardId, { textSize: parseInt(e.target.value) })} className="editor-input !w-12 !p-1 !text-[10px]" />
                         </div>
                       </div>
-                      <TiptapEditor
+                      <textarea
                         value={activeCard.text}
-                        onChange={(content) => updateCard(activeCardId, { text: content })}
-                        minHeight="100px"
+                        onChange={(e) => updateCard(activeCardId, { text: e.target.value })}
+                        className="editor-textarea"
+                        placeholder="Card body text..."
+                        rows={6}
                       />
                     </div>
                   </section>
@@ -662,47 +516,21 @@ function App() {
                     <div className="editor-field-group">
                       <div className="editor-rich-label">Local Upload</div>
                       <label className="upload-label">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="hidden"
-                        />
-                        <div className="upload-placeholder">
-                          <Upload size={18} />
-                          <span>Upload Image</span>
-                        </div>
+                        <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                        <div className="upload-placeholder"><Upload size={18} /><span>Upload Image</span></div>
                       </label>
                     </div>
                     <div className="editor-field-group">
                       <div className="editor-rich-label">Source URL</div>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={activeCard.imageUrl}
-                          onChange={(e) => updateCard(activeCardId, { imageUrl: e.target.value })}
-                          className="editor-input"
-                          placeholder="https://..."
-                        />
-                      </div>
+                      <input type="text" value={activeCard.imageUrl} onChange={(e) => updateCard(activeCardId, { imageUrl: e.target.value })} className="editor-input" placeholder="https://..." />
                     </div>
                     <div className="editor-field-group">
                       <div className="editor-rich-label">Overlay Caption</div>
-                      <input
-                        type="text"
-                        value={activeCard.caption}
-                        onChange={(e) => updateCard(activeCardId, { caption: e.target.value })}
-                        className="editor-input"
-                        placeholder="Caption text..."
-                      />
+                      <input type="text" value={activeCard.caption} onChange={(e) => updateCard(activeCardId, { caption: e.target.value })} className="editor-input" placeholder="Caption text..." />
                     </div>
                     <div className="editor-field-group">
                       <div className="editor-rich-label">Object Position</div>
-                      <select
-                        value={activeCard.imagePosition}
-                        onChange={(e) => updateCard(activeCardId, { imagePosition: e.target.value })}
-                        className="editor-select"
-                      >
+                      <select value={activeCard.imagePosition} onChange={(e) => updateCard(activeCardId, { imagePosition: e.target.value })} className="editor-select">
                         <option value="top left">Top Left</option>
                         <option value="top center">Top Center</option>
                         <option value="top right">Top Right</option>
@@ -730,7 +558,6 @@ function App() {
                           else if (val === 'template-high-contrast') defaults = { cardBg: '#000000', textColor: '#ffff00', borderColor: '#ffff00', borderRadius: 0 };
                           else if (val === 'template-sophisticated') defaults = { cardBg: '#f4f1ea', textColor: '#2c1810', borderColor: '#d4af37', borderRadius: 4 };
                           else if (val === 'template-monospace') defaults = { cardBg: '#1e1e1e', textColor: '#d4d4d4', borderColor: '#333', borderRadius: 4 };
-
                           updateCard(activeCardId, { template: val, ...defaults });
                         }}
                         className="editor-select"
@@ -745,146 +572,71 @@ function App() {
                         <option value="template-casual">Casual Serious</option>
                       </select>
                     </div>
-
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="editor-field-group">
-                        <div className="editor-rich-label">Background</div>
-                        <input type="color" value={activeCard.cardBg} onChange={(e) => updateCard(activeCardId, { cardBg: e.target.value })} className="editor-input !p-1 h-10" />
-                      </div>
-                      <div className="editor-field-group">
-                        <div className="editor-rich-label">Text Color</div>
-                        <input type="color" value={activeCard.textColor} onChange={(e) => updateCard(activeCardId, { textColor: e.target.value })} className="editor-input !p-1 h-10" />
-                      </div>
+                      <div className="editor-field-group"><div className="editor-rich-label">Background</div><input type="color" value={activeCard.cardBg} onChange={(e) => updateCard(activeCardId, { cardBg: e.target.value })} className="editor-input !p-1 h-10" /></div>
+                      <div className="editor-field-group"><div className="editor-rich-label">Text Color</div><input type="color" value={activeCard.textColor} onChange={(e) => updateCard(activeCardId, { textColor: e.target.value })} className="editor-input !p-1 h-10" /></div>
                     </div>
                   </section>
 
                   <section className="editor-section">
                     <label className="section-label"><Columns2 size={16} /> Dimensions & Layout</label>
-
                     <div className="editor-field-group">
                       <div className="editor-rich-label">Card Height: {activeCard.cardHeight}px</div>
                       <input type="range" min="200" max="800" value={activeCard.cardHeight} onChange={(e) => updateCard(activeCardId, { cardHeight: parseInt(e.target.value) })} className="editor-range" />
                     </div>
-
                     <div className="editor-field-group mt-2">
                       <div className="editor-rich-label">Flow Direction</div>
                       <div className="grid grid-cols-3 gap-1">
                         {['horizontal-left', 'horizontal-right', 'vertical'].map((opt) => (
-                          <button
-                            key={opt}
-                            onClick={() => updateCard(activeCardId, { orientation: opt })}
-                            className={`layout-btn ${activeCard.orientation === opt ? 'active' : ''}`}
-                          >
-                            {opt.split('-')[0]}
-                          </button>
+                          <button key={opt} onClick={() => updateCard(activeCardId, { orientation: opt })} className={`layout-btn ${activeCard.orientation === opt ? 'active' : ''}`}>{opt.split('-')[0]}</button>
                         ))}
                       </div>
                     </div>
-
                     <div className="editor-field-group mt-2">
                       <div className="editor-rich-label">Vertical Alignment</div>
                       <div className="grid grid-cols-3 gap-1">
                         {['top', 'center', 'bottom'].map((align) => (
-                          <button
-                            key={align}
-                            onClick={() => updateCard(activeCardId, { verticalAlign: align })}
-                            className={`layout-btn ${activeCard.verticalAlign === align ? 'active' : ''}`}
-                          >
-                            {align}
-                          </button>
+                          <button key={align} onClick={() => updateCard(activeCardId, { verticalAlign: align })} className={`layout-btn ${activeCard.verticalAlign === align ? 'active' : ''}`}>{align}</button>
                         ))}
                       </div>
                     </div>
-
                     <div className="grid grid-cols-2 gap-3 mt-2">
-                      <div className="editor-field-group">
-                        <div className="editor-rich-label">Outer Padding</div>
-                        <input type="number" value={activeCard.cardPadding} onChange={(e) => updateCard(activeCardId, { cardPadding: parseInt(e.target.value) })} className="editor-input" />
-                      </div>
-                      <div className="editor-field-group">
-                        <div className="editor-rich-label">Inner Gap</div>
-                        <input type="number" value={activeCard.contentPadding} onChange={(e) => updateCard(activeCardId, { contentPadding: parseInt(e.target.value) })} className="editor-input" />
-                      </div>
+                      <div className="editor-field-group"><div className="editor-rich-label">Outer Padding</div><input type="number" value={activeCard.cardPadding} onChange={(e) => updateCard(activeCardId, { cardPadding: parseInt(e.target.value) })} className="editor-input" /></div>
+                      <div className="editor-field-group"><div className="editor-rich-label">Inner Gap</div><input type="number" value={activeCard.contentPadding} onChange={(e) => updateCard(activeCardId, { contentPadding: parseInt(e.target.value) })} className="editor-input" /></div>
                     </div>
                   </section>
 
                   <section className="editor-section">
                     <label className="section-label"><Palette size={16} /> Borders & Corners</label>
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="editor-field-group">
-                        <div className="editor-rich-label">Stroke Width</div>
-                        <input type="number" value={activeCard.borderWidth} onChange={(e) => updateCard(activeCardId, { borderWidth: parseInt(e.target.value) })} className="editor-input" />
-                      </div>
-                      <div className="editor-field-group">
-                        <div className="editor-rich-label">Corner Radius</div>
-                        <input type="number" value={activeCard.borderRadius} onChange={(e) => updateCard(activeCardId, { borderRadius: parseInt(e.target.value) })} className="editor-input" />
-                      </div>
+                      <div className="editor-field-group"><div className="editor-rich-label">Stroke Width</div><input type="number" value={activeCard.borderWidth} onChange={(e) => updateCard(activeCardId, { borderWidth: parseInt(e.target.value) })} className="editor-input" /></div>
+                      <div className="editor-field-group"><div className="editor-rich-label">Corner Radius</div><input type="number" value={activeCard.borderRadius} onChange={(e) => updateCard(activeCardId, { borderRadius: parseInt(e.target.value) })} className="editor-input" /></div>
                     </div>
                     <div className="grid grid-cols-2 gap-3 mt-2">
-                      <div className="editor-field-group">
-                        <div className="editor-rich-label">Media Radius</div>
-                        <input type="number" value={activeCard.imageRadius} onChange={(e) => updateCard(activeCardId, { imageRadius: parseInt(e.target.value) })} className="editor-input" />
-                      </div>
+                      <div className="editor-field-group"><div className="editor-rich-label">Media Radius</div><input type="number" value={activeCard.imageRadius} onChange={(e) => updateCard(activeCardId, { imageRadius: parseInt(e.target.value) })} className="editor-input" /></div>
                       <div className="editor-field-group">
                         <div className="editor-rich-label">Stroke Style</div>
                         <select value={activeCard.borderStyle} onChange={(e) => updateCard(activeCardId, { borderStyle: e.target.value })} className="editor-select">
-                          <option value="solid">Solid</option>
-                          <option value="dashed">Dashed</option>
-                          <option value="dotted">Dotted</option>
-                          <option value="double">Double</option>
+                          <option value="solid">Solid</option><option value="dashed">Dashed</option><option value="dotted">Dotted</option><option value="double">Double</option>
                         </select>
                       </div>
                     </div>
-                    <div className="editor-field-group mt-2">
-                      <div className="editor-rich-label">Stroke Color</div>
-                      <input type="color" value={activeCard.borderColor} onChange={(e) => updateCard(activeCardId, { borderColor: e.target.value })} className="editor-input !p-1 h-10" />
-                    </div>
+                    <div className="editor-field-group mt-2"><div className="editor-rich-label">Stroke Color</div><input type="color" value={activeCard.borderColor} onChange={(e) => updateCard(activeCardId, { borderColor: e.target.value })} className="editor-input !p-1 h-10" /></div>
                   </section>
                 </div>
               </div>
 
-              {/* Viewport (Center) */}
               <div className="viewport">
-                <div
-                  className={`card-preview ${activeCard.orientation} ${activeCard.template} shadow-ambient`}
-                  style={getCardStyles(activeCard)}
-                >
+                <div className={`card-preview ${activeCard.orientation} ${activeCard.template} shadow-ambient`} style={getCardStyles(activeCard)}>
                   {activeCard.imageUrl && (
                     <div className="card-image">
-                      <img
-                        src={activeCard.imageUrl}
-                        alt=""
-                        loading="eager"
-                        className="card-image-content"
-                        style={{
-                          objectPosition: activeCard.imagePosition,
-                          borderRadius: `${activeCard.imageRadius}px`
-                        }}
-                      />
-                      {activeCard.caption && (
-                        <div className="card-caption-overlay">
-                          {activeCard.caption}
-                        </div>
-                      )}
+                      <img src={activeCard.imageUrl} alt="" loading="eager" className="card-image-content" style={{ objectPosition: activeCard.imagePosition, borderRadius: `${activeCard.imageRadius}px` }} />
+                      {activeCard.caption && <div className="card-caption-overlay">{activeCard.caption}</div>}
                     </div>
                   )}
                   <div className="card-content" style={getContentStyles(activeCard)}>
-                    <h1
-                      className="card-title"
-                      style={{
-                        fontSize: `${activeCard.titleSize}px`,
-                        fontFamily: activeCard.titleFont !== 'inherit' ? activeCard.titleFont : undefined
-                      }}
-                      dangerouslySetInnerHTML={{ __html: stripPTags(activeCard.title) }}
-                    />
-                    <div
-                      className="card-text"
-                      style={{
-                        fontSize: `${activeCard.textSize}px`,
-                        fontFamily: activeCard.textFont !== 'inherit' ? activeCard.textFont : undefined
-                      }}
-                      dangerouslySetInnerHTML={{ __html: activeCard.text }}
-                    />
+                    <h1 className="card-title" style={{ fontSize: `${activeCard.titleSize}px`, fontFamily: activeCard.titleFont !== 'inherit' ? activeCard.titleFont : undefined }}>{activeCard.title}</h1>
+                    <div className="card-text" style={{ fontSize: `${activeCard.textSize}px`, fontFamily: activeCard.textFont !== 'inherit' ? activeCard.textFont : undefined }}>{activeCard.text}</div>
                   </div>
                 </div>
               </div>
@@ -892,47 +644,19 @@ function App() {
           </div>
         )}
 
-        {/* Hidden Print Container */}
         <div className="print-only">
           <div className="print-container">
             {cards.filter(c => c.selectedForPrint !== false).map(card => (
-              <div
-                key={card.id}
-                className={`card-preview ${card.orientation} ${card.template} print-card`}
-                style={getCardStyles(card)}
-              >
+              <div key={card.id} className={`card-preview ${card.orientation} ${card.template} print-card`} style={getCardStyles(card)}>
                 {card.imageUrl && (
                   <div className="card-image">
-                    <img
-                      src={card.imageUrl}
-                      alt=""
-                      loading="eager"
-                      className="card-image-content"
-                      style={{
-                        objectPosition: card.imagePosition,
-                        borderRadius: `${card.imageRadius}px`
-                      }}
-                    />
+                    <img src={card.imageUrl} alt="" loading="eager" className="card-image-content" style={{ objectPosition: card.imagePosition, borderRadius: `${card.imageRadius}px` }} />
                     {card.caption && <div className="card-caption-overlay">{card.caption}</div>}
                   </div>
                 )}
                 <div className="card-content" style={getContentStyles(card)}>
-                  <h1
-                    className="card-title"
-                    style={{
-                      fontSize: `${card.titleSize}px`,
-                      fontFamily: card.titleFont !== 'inherit' ? card.titleFont : undefined
-                    }}
-                    dangerouslySetInnerHTML={{ __html: stripPTags(card.title) }}
-                  />
-                  <div
-                    className="card-text"
-                    style={{
-                      fontSize: `${card.textSize}px`,
-                      fontFamily: card.textFont !== 'inherit' ? card.textFont : undefined
-                    }}
-                    dangerouslySetInnerHTML={{ __html: card.text }}
-                  />
+                  <h1 className="card-title" style={{ fontSize: `${card.titleSize}px`, fontFamily: card.titleFont !== 'inherit' ? card.titleFont : undefined }}>{card.title}</h1>
+                  <div className="card-text" style={{ fontSize: `${card.textSize}px`, fontFamily: card.textFont !== 'inherit' ? card.textFont : undefined }}>{card.text}</div>
                 </div>
               </div>
             ))}

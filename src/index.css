@@ -640,6 +640,7 @@ body {
   opacity: 0.85;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  white-space: pre-wrap;
 }
 
 /* Ensure all rich-text content inside wraps correctly */
