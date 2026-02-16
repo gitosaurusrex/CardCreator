@@ -451,7 +451,7 @@ function App() {
   };
 
   const closeProject = () => {
-    if (confirm('Return to project selector? Your changes are auto-saved to your browser.')) {
+    if (confirm('Return to project selector? Your changes are auto-saved to the cloud.')) {
       setCurrentProjectId(null);
     }
   };
