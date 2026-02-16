@@ -553,7 +553,7 @@ function App() {
                 <Plus size={24} />
               </button>
               <div className="spacer"></div>
-              <div className="flex gap-2 mr-4 items-center">
+              <div className="ribbon-actions flex gap-2 mr-4 items-center">
                 <div className="flex flex-col gap-1 mr-2">
                   <input
                     type="text"
@@ -590,7 +590,7 @@ function App() {
                 >
                   <X size={18} /> Close
                 </button>
-                <div className="flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-full text-[10px] font-bold text-gray-500 whitespace-nowrap">
+                <div className="status-indicator flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-full text-[10px] font-bold text-gray-500 whitespace-nowrap">
                   {saveStatus === 'saving' && (
                     <>
                       <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
