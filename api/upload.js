@@ -19,8 +19,19 @@ export default async function handler(req, res) {
         }
 
         const clerkClient = createClerkClient({ secretKey });
-        const { userId } = await clerkClient.authenticateRequest(req);
+        const protocol = req.headers['x-forwarded-proto'] || 'https';
+        const hostname = req.headers['host'];
+        const absoluteUrl = `${protocol}://${hostname}${req.url}`;
 
+        const requestState = await clerkClient.authenticateRequest(req, {
+            request: {
+                url: absoluteUrl,
+                headers: req.headers,
+                method: req.method
+            }
+        });
+
+        const userId = requestState.isSignedIn ? requestState.toAuth().userId : null;
         if (!userId) {
             return res.status(401).send(JSON.stringify({ error: "Unauthorized" }));
         }
