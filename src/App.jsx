@@ -219,6 +219,9 @@ function App() {
   useEffect(() => {
     if (!currentProjectId) return;
 
+    // Changes detected, set status to unsaved immediately
+    setSaveStatus('unsaved');
+
     const timer = setTimeout(async () => {
       // 1. Save to Local Storage (Always)
       localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
@@ -492,23 +495,29 @@ function App() {
                 >
                   <X size={18} /> Close
                 </button>
-                <div className="status-indicator flex items-center gap-2 px-3 py-1 bg-gray-100 rounded-full text-[10px] font-bold text-gray-500 whitespace-nowrap">
+                <div className="status-indicator flex items-center gap-2 px-3 py-1 bg-gray-50 rounded-full text-[10px] font-bold text-gray-500 whitespace-nowrap border border-gray-100">
+                  {saveStatus === 'unsaved' && (
+                    <>
+                      <div className="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
+                      <span>Pending Sync...</span>
+                    </>
+                  )}
                   {saveStatus === 'saving' && (
                     <>
                       <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                      <span>Saving to Cloud...</span>
+                      <span>Syncing...</span>
                     </>
                   )}
                   {saveStatus === 'saved' && (
                     <>
                       <Check size={12} className="text-green-500" />
-                      <span>Saved to Cloud</span>
+                      <span>Synced to Cloud</span>
                     </>
                   )}
                   {saveStatus === 'error' && (
                     <>
-                      <AlertCircle size={12} className="text-amber-500" />
-                      <span>Offline (Local Only)</span>
+                      <AlertCircle size={12} className="text-red-400" />
+                      <span>Sync Paused (Local Only)</span>
                     </>
                   )}
                 </div>
