@@ -234,24 +234,36 @@ body {
   transform: scale(0.98);
 }
 
-.action-btn-secondary {
-  background: white;
-  color: #666;
-  border: 1px solid var(--border-color);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+.close-project-btn {
+  background: #f5f5f7;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
+  gap: 8px;
+  color: #666;
+  white-space: nowrap;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  width: fit-content;
 }
 
-.action-btn-secondary:hover {
-  background: #f5f5f7;
-  color: var(--accent-color);
-  border-color: var(--accent-color);
+.close-project-btn:hover {
+  background: var(--accent-color);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);
+}
+
+.ribbon-actions {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
 }
 
 .export-input {
@@ -890,27 +902,7 @@ body {
   background: #ffe2e0;
 }
 
-.close-project-btn {
-  background: #f5f5f7;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 20px;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #666;
-  transition: all 0.2s;
-}
-
-.close-project-btn:hover {
-  background: var(--accent-color);
-  color: white;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.2);
-}
+/* Button styles moved to top */
 
 .animate-spin {
   animation: spin 1s linear infinite;
