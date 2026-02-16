@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Printer, Columns2, Rows2, Image as ImageIcon, Palette, Type, Bold, Italic, Palette as ColorIcon, FolderOpen, ExternalLink, X, Clock, Lock, Cloud, Check, AlertCircle, Upload } from 'lucide-react';
+import { Plus, Trash2, Printer, Columns2, Rows2, Image as ImageIcon, Palette, Type, Bold, Italic, Palette as ColorIcon, FolderOpen, ExternalLink, X, Clock, Lock, Cloud, Check, AlertCircle } from 'lucide-react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Color } from '@tiptap/extension-color';
@@ -340,33 +340,6 @@ function App() {
     }
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // 1. Show local preview immediately for responsiveness
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        updateCard(activeCardId, { imageUrl: reader.result });
-      };
-      reader.readAsDataURL(file);
-
-      // 2. Upload to Vercel Blob
-      try {
-        const response = await fetch(`/api/upload?filename=${file.name}`, {
-          method: 'POST',
-          body: file,
-        });
-
-        if (!response.ok) throw new Error('Upload failed');
-
-        const newBlob = await response.json();
-        // 3. Replace local URL with permanent cloud URL
-        updateCard(activeCardId, { imageUrl: newBlob.url });
-      } catch (error) {
-        console.error("Cloud upload failed, keeping local version:", error);
-      }
-    }
-  };
 
 
   const getCardStyles = (card) => {
@@ -613,10 +586,6 @@ function App() {
                           className="editor-input"
                           placeholder="https://..."
                         />
-                        <label className="upload-icon-btn">
-                          <Upload size={18} />
-                          <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                        </label>
                       </div>
                     </div>
                     <div className="editor-field-group">

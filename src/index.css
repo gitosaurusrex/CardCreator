@@ -286,23 +286,6 @@ body {
   background: white;
 }
 
-.upload-icon-btn {
-  background: #f5f5f7;
-  color: #666;
-  border: 1px solid var(--border-color);
-  padding: 0 12px;
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.upload-icon-btn:hover {
-  background: #eee;
-  color: #333;
-}
 
 .editor-rich-label {
   font-size: 11px;
