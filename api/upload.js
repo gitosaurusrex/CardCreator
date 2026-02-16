@@ -1,5 +1,7 @@
 import { sql } from '@vercel/postgres';
-import { getAuth } from '@clerk/clerk-sdk-node';
+import { createClerkClient } from '@clerk/backend';
+
+const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
 
 export const config = {
     api: {
@@ -13,13 +15,13 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'application/json');
 
     try {
-        if (!process.env.CLERK_SECRET_KEY && process.env.CLERK_API_KEY) {
-            process.env.CLERK_SECRET_KEY = process.env.CLERK_API_KEY;
-        } else if (process.env.CLERK_SECRET_KEY && !process.env.CLERK_API_KEY) {
-            process.env.CLERK_API_KEY = process.env.CLERK_SECRET_KEY;
+        if (!process.env.CLERK_SECRET_KEY) {
+            return res.status(500).send(JSON.stringify({ error: "Configuration Error" }));
         }
 
-        const { userId } = getAuth(req);
+        const requestState = await clerkClient.authenticateRequest(req);
+        const userId = requestState.isSignedIn ? requestState.toAuth().userId : null;
+
         if (!userId) {
             return res.status(401).send(JSON.stringify({ error: "Unauthorized" }));
         }
@@ -44,7 +46,7 @@ export default async function handler(req, res) {
             success: true
         }));
     } catch (error) {
-        console.error("Upload Error:", error);
+        console.error("Upload API Error:", error);
         return res.status(500).send(JSON.stringify({
             error: "Upload Failed",
             message: error.message

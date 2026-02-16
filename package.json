@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.60.1",
-    "@clerk/clerk-sdk-node": "^4.13.23",
+    "@clerk/backend": "^1.24.1",
     "@tiptap/extension-color": "^3.19.0",
     "@tiptap/extension-text-style": "^3.19.0",
     "@tiptap/pm": "^3.19.0",
