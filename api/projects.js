@@ -1,8 +1,7 @@
-import { db } from '@vercel/postgres';
+import { sql } from '@vercel/postgres';
 import { getAuth } from '@clerk/clerk-sdk-node';
 
 export default async function handler(req, res) {
-    let client;
     try {
         // 1. Verify Authentication
         let userId;
@@ -18,29 +17,26 @@ export default async function handler(req, res) {
             return res.status(401).json({ error: "Unauthorized. Please sign in." });
         }
 
-        // 2. Connect to DB
+        // 2. Ensure table exists (safe with sql helper)
         try {
-            client = await db.connect();
+            await sql`
+                CREATE TABLE IF NOT EXISTS projects (
+                    id TEXT PRIMARY KEY,
+                    user_id TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    cards JSONB NOT NULL,
+                    export_name TEXT,
+                    last_modified TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                );
+            `;
         } catch (dbError) {
-            console.error("DB Connection Error:", dbError);
-            return res.status(500).json({ error: "Database connection failed", details: dbError.message });
+            console.error("DB Init Error:", dbError);
+            return res.status(500).json({ error: "Database initialization failed", details: dbError.message });
         }
 
-        // 3. Ensure table exists
-        await client.sql`
-            CREATE TABLE IF NOT EXISTS projects (
-                id TEXT PRIMARY KEY,
-                user_id TEXT NOT NULL,
-                name TEXT NOT NULL,
-                cards JSONB NOT NULL,
-                export_name TEXT,
-                last_modified TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-            );
-        `;
-
-        // 4. GET: List only current user's projects
+        // 3. GET: List only current user's projects
         if (req.method === 'GET') {
-            const { rows } = await client.sql`
+            const { rows } = await sql`
                 SELECT * FROM projects 
                 WHERE user_id = ${userId} 
                 ORDER BY last_modified DESC
@@ -55,18 +51,16 @@ export default async function handler(req, res) {
             return res.status(200).json(formattedRows);
         }
 
-        // 5. POST: Save/Update with ownership check
+        // 4. POST: Save/Update with ownership check
         if (req.method === 'POST') {
             const { id, name, cards } = req.body;
             if (!id || !name || !cards) {
                 return res.status(400).json({ error: "Missing required fields" });
             }
 
-            // Upsert only if user_id matches or it's a new row
-            // We stringify cards explicitly to ensure pg handles it as JSONB properly
             const cardsJson = JSON.stringify(cards);
 
-            await client.sql`
+            await sql`
                 INSERT INTO projects (id, user_id, name, cards, export_name, last_modified)
                 VALUES (${id.toString()}, ${userId}, ${name}, ${cardsJson}, NULL, NOW())
                 ON CONFLICT (id) DO UPDATE SET
@@ -78,12 +72,12 @@ export default async function handler(req, res) {
             return res.status(200).json({ success: true });
         }
 
-        // 6. DELETE: Remove only own project
+        // 5. DELETE: Remove only own project
         if (req.method === 'DELETE') {
             const { id } = req.query;
             if (!id) return res.status(400).json({ error: "Missing ID" });
 
-            await client.sql`
+            await sql`
                 DELETE FROM projects 
                 WHERE id = ${id} AND user_id = ${userId}
             `;
@@ -98,7 +92,5 @@ export default async function handler(req, res) {
             message: error.message,
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
-    } finally {
-        if (client) client.release();
     }
 }

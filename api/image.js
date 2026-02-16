@@ -1,16 +1,13 @@
-import { db } from '@vercel/postgres';
+import { sql } from '@vercel/postgres';
 
 export default async function handler(req, res) {
-    let client;
     try {
         const { id } = req.query;
         if (!id) {
             return res.status(400).end();
         }
 
-        client = await db.connect();
-
-        const { rows } = await client.sql`
+        const { rows } = await sql`
             SELECT data, content_type FROM images WHERE id = ${id}
         `;
 
@@ -32,7 +29,5 @@ export default async function handler(req, res) {
     } catch (error) {
         console.error("Image Fetch Error:", error);
         return res.status(500).end();
-    } finally {
-        if (client) client.release();
     }
 }
