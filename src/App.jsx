@@ -207,53 +207,73 @@ function App() {
 
   // Sync cards state with active project
   useEffect(() => {
-    if (activeProject) {
+    if (activeProject && currentProjectId) {
+      // Only update if IDs differ or cards are reference-different
+      // to avoid unnecessary resets
       setCards(activeProject.cards);
       setActiveCardId(activeProject.cards[0]?.id || INITIAL_CARD.id);
     }
   }, [currentProjectId]);
 
-  // Auto-save to localStorage & Cloud (Debounced)
+  // Auto-save logic (Debounced)
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+    if (!currentProjectId) return;
 
-    if (currentProjectId) {
-      setSaveStatus('saving');
+    const timer = setTimeout(async () => {
+      // 1. Save to Local Storage (Always)
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+
+      // 2. Save to Cloud (If authenticated)
       const active = projects.find(p => p.id === currentProjectId);
-      const timer = setTimeout(async () => {
-        try {
-          const token = await getToken();
-          if (!token) return;
-          const res = await fetch('/api/projects', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify(active),
-          });
-          if (res.ok) {
-            setSaveStatus('saved');
-          } else {
-            setSaveStatus('error');
-          }
-        } catch (err) {
-          console.warn("Cloud sync paused (Running locally)");
+      if (!active) return;
+
+      setSaveStatus('saving');
+      try {
+        const token = await getToken();
+        if (!token) {
+          setSaveStatus('error');
+          return;
+        }
+
+        const res = await fetch('/api/projects', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(active),
+        });
+
+        if (res.ok) {
+          setSaveStatus('saved');
+        } else {
+          const errData = await res.json().catch(() => ({}));
+          console.error("Cloud save failed:", errData);
           setSaveStatus('error');
         }
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
+      } catch (err) {
+        console.warn("Cloud sync paused:", err);
+        setSaveStatus('error');
+      }
+    }, 1500);
+
+    return () => clearTimeout(timer);
   }, [projects, currentProjectId, getToken]);
 
   // Update projects list when cards change
   useEffect(() => {
-    if (currentProjectId) {
-      setProjects(prev => prev.map(p =>
-        p.id === currentProjectId
-          ? { ...p, cards, lastModified: Date.now() }
-          : p
-      ));
+    if (currentProjectId && cards.length > 0) {
+      // Only update projects list if cards actually changed relative to the list
+      setProjects(prev => {
+        const existing = prev.find(p => p.id === currentProjectId);
+        if (existing && existing.cards === cards) return prev;
+
+        return prev.map(p =>
+          p.id === currentProjectId
+            ? { ...p, cards, lastModified: Date.now() }
+            : p
+        );
+      });
     }
   }, [cards, currentProjectId]);
 
