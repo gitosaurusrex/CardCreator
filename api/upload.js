@@ -13,6 +13,12 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'application/json');
 
     try {
+        if (!process.env.CLERK_SECRET_KEY && process.env.CLERK_API_KEY) {
+            process.env.CLERK_SECRET_KEY = process.env.CLERK_API_KEY;
+        } else if (process.env.CLERK_SECRET_KEY && !process.env.CLERK_API_KEY) {
+            process.env.CLERK_API_KEY = process.env.CLERK_SECRET_KEY;
+        }
+
         const { userId } = getAuth(req);
         if (!userId) {
             return res.status(401).send(JSON.stringify({ error: "Unauthorized" }));
@@ -24,13 +30,13 @@ export default async function handler(req, res) {
 
         const { data, contentType, fileName } = req.body;
         if (!data) {
-            return res.status(400).send(JSON.stringify({ error: "No data" }));
+            return res.status(400).send(JSON.stringify({ error: "No data provided" }));
         }
 
         const id = Math.random().toString(36).substring(7);
         await sql`
             INSERT INTO images (id, user_id, data, content_type, file_name)
-            VALUES (${id}, ${userId}, ${data}, ${contentType}, ${fileName || 'upload'})
+            VALUES (${id}, ${userId}, ${data}, ${contentType || 'image/png'}, ${fileName || 'upload'})
         `;
 
         return res.status(200).send(JSON.stringify({
