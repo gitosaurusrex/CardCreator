@@ -124,7 +124,7 @@ const stripPTags = (html) => html ? html.replace(/<\/?p[^>]*>/g, '') : '';
 
 const STORAGE_KEY = 'tilemaker_projects_v1';
 
-const ProjectSelector = ({ projects, onSelect, onCreate, onDelete, onImport }) => {
+const ProjectSelector = ({ projects, onSelect, onCreate, onDelete }) => {
   return (
     <div className="project-selector-overlay">
       <div className="selector-header">
