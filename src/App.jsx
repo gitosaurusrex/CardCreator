@@ -255,7 +255,7 @@ function App() {
           : p
       ));
     }
-  }, [cards, exportName, currentProjectId]);
+  }, [cards, currentProjectId]);
 
   const createProject = () => {
     const newProject = {
