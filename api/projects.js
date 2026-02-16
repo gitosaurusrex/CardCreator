@@ -1,22 +1,24 @@
 import { sql } from '@vercel/postgres';
 import { createClerkClient } from '@clerk/backend';
 
-const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
-
 export default async function handler(req, res) {
+    // Explicitly set JSON header
     res.setHeader('Content-Type', 'application/json');
 
     try {
-        // Explicitly check for Secret Key to avoid hard crash
-        if (!process.env.CLERK_SECRET_KEY) {
+        const secretKey = process.env.CLERK_SECRET_KEY;
+        if (!secretKey) {
             console.error("Missing CLERK_SECRET_KEY");
-            return res.status(500).send(JSON.stringify({ error: "Configuration Error" }));
+            return res.status(500).send(JSON.stringify({ error: "Configuration Error", details: "Clerk Secret Key missing" }));
         }
 
-        const requestState = await clerkClient.authenticateRequest(req);
-        const userId = requestState.isSignedIn ? requestState.toAuth().userId : null;
+        const clerkClient = createClerkClient({ secretKey });
+
+        // Use the new standard way to get auth from headers
+        const { userId } = await clerkClient.authenticateRequest(req);
 
         if (!userId) {
+            console.warn("Unauthorized request to /api/projects");
             return res.status(401).send(JSON.stringify({ error: "Unauthorized" }));
         }
 
@@ -58,10 +60,11 @@ export default async function handler(req, res) {
 
         return res.status(405).send(JSON.stringify({ error: "Method not allowed" }));
     } catch (error) {
-        console.error("Projects API Error:", error);
+        console.error("Critical Projects API Error:", error);
         return res.status(500).send(JSON.stringify({
             error: "Internal Server Error",
-            message: error.message
+            message: error.message,
+            type: error.constructor.name
         }));
     }
 }
