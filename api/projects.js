@@ -2,7 +2,6 @@ import { sql } from '@vercel/postgres';
 import { getAuth } from '@clerk/clerk-sdk-node';
 
 export default async function handler(req, res) {
-    // Set JSON header immediately
     res.setHeader('Content-Type', 'application/json');
 
     try {
@@ -18,7 +17,16 @@ export default async function handler(req, res) {
                 WHERE user_id = ${userId} 
                 ORDER BY last_modified DESC
             `;
-            return res.status(200).send(JSON.stringify(rows));
+
+            // Map DB snake_case to Frontend camelCase
+            const formatted = rows.map(r => ({
+                id: r.id,
+                name: r.name,
+                cards: typeof r.cards === 'string' ? JSON.parse(r.cards) : r.cards,
+                lastModified: r.last_modified
+            }));
+
+            return res.status(200).send(JSON.stringify(formatted));
         }
 
         if (req.method === 'POST') {
@@ -26,15 +34,24 @@ export default async function handler(req, res) {
             if (!id || !name || !cards) {
                 return res.status(400).send(JSON.stringify({ error: "Missing fields" }));
             }
+
+            const cardsJson = JSON.stringify(cards);
             await sql`
                 INSERT INTO projects (id, user_id, name, cards, last_modified)
-                VALUES (${id}, ${userId}, ${name}, ${JSON.stringify(cards)}, NOW())
+                VALUES (${id}, ${userId}, ${name}, ${cardsJson}, NOW())
                 ON CONFLICT (id) DO UPDATE SET
                     name = EXCLUDED.name,
                     cards = EXCLUDED.cards,
                     last_modified = NOW()
                 WHERE projects.user_id = ${userId}
             `;
+            return res.status(200).send(JSON.stringify({ success: true }));
+        }
+
+        if (req.method === 'DELETE') {
+            const { id } = req.query;
+            if (!id) return res.status(400).send(JSON.stringify({ error: "Missing ID" }));
+            await sql`DELETE FROM projects WHERE id = ${id} AND user_id = ${userId}`;
             return res.status(200).send(JSON.stringify({ success: true }));
         }
 
