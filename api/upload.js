@@ -1,8 +1,6 @@
 import { sql } from '@vercel/postgres';
 import { createClerkClient } from '@clerk/backend';
 
-const clerkClient = createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY });
-
 export const config = {
     api: {
         bodyParser: {
@@ -15,12 +13,13 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'application/json');
 
     try {
-        if (!process.env.CLERK_SECRET_KEY) {
+        const secretKey = process.env.CLERK_SECRET_KEY || process.env.CLERK_API_KEY;
+        if (!secretKey) {
             return res.status(500).send(JSON.stringify({ error: "Configuration Error" }));
         }
 
-        const requestState = await clerkClient.authenticateRequest(req);
-        const userId = requestState.isSignedIn ? requestState.toAuth().userId : null;
+        const clerkClient = createClerkClient({ secretKey });
+        const { userId } = await clerkClient.authenticateRequest(req);
 
         if (!userId) {
             return res.status(401).send(JSON.stringify({ error: "Unauthorized" }));
@@ -46,7 +45,7 @@ export default async function handler(req, res) {
             success: true
         }));
     } catch (error) {
-        console.error("Upload API Error:", error);
+        console.error("Upload Error:", error);
         return res.status(500).send(JSON.stringify({
             error: "Upload Failed",
             message: error.message

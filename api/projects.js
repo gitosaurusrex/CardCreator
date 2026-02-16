@@ -2,23 +2,24 @@ import { sql } from '@vercel/postgres';
 import { createClerkClient } from '@clerk/backend';
 
 export default async function handler(req, res) {
-    // Explicitly set JSON header
     res.setHeader('Content-Type', 'application/json');
 
     try {
-        const secretKey = process.env.CLERK_SECRET_KEY;
+        // Find whichever key name is provided by Vercel
+        const secretKey = process.env.CLERK_SECRET_KEY || process.env.CLERK_API_KEY;
+
         if (!secretKey) {
-            console.error("Missing CLERK_SECRET_KEY");
-            return res.status(500).send(JSON.stringify({ error: "Configuration Error", details: "Clerk Secret Key missing" }));
+            console.error("CRITICAL: Clerk Secret Key is missing from Vercel Environment Variables");
+            return res.status(500).send(JSON.stringify({
+                error: "Configuration Error",
+                details: "Clerk Secret Key not found. Please check your Vercel project environment variables."
+            }));
         }
 
         const clerkClient = createClerkClient({ secretKey });
-
-        // Use the new standard way to get auth from headers
         const { userId } = await clerkClient.authenticateRequest(req);
 
         if (!userId) {
-            console.warn("Unauthorized request to /api/projects");
             return res.status(401).send(JSON.stringify({ error: "Unauthorized" }));
         }
 
@@ -58,13 +59,19 @@ export default async function handler(req, res) {
             return res.status(200).send(JSON.stringify({ success: true }));
         }
 
+        if (req.method === 'DELETE') {
+            const { id } = req.query;
+            if (!id) return res.status(400).send(JSON.stringify({ error: "Missing ID" }));
+            await sql`DELETE FROM projects WHERE id = ${id} AND user_id = ${userId}`;
+            return res.status(200).send(JSON.stringify({ success: true }));
+        }
+
         return res.status(405).send(JSON.stringify({ error: "Method not allowed" }));
     } catch (error) {
-        console.error("Critical Projects API Error:", error);
+        console.error("Projects API Error:", error);
         return res.status(500).send(JSON.stringify({
             error: "Internal Server Error",
-            message: error.message,
-            type: error.constructor.name
+            message: error.message
         }));
     }
 }
