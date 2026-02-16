@@ -12,18 +12,15 @@ export default async function handler(req, res) {
 
         const clerkClient = createClerkClient({ secretKey });
 
-        // Build the absolute URL to satisfy Clerk's parser
+        // Convert Node request to a Standard Web Request
         const protocol = req.headers['x-forwarded-proto'] || 'https';
         const hostname = req.headers['host'];
-        const absoluteUrl = `${protocol}://${hostname}${req.url}`;
+        const fullUrl = new URL(req.url, `${protocol}://${hostname}`).toString();
 
-        const requestState = await clerkClient.authenticateRequest(req, {
-            request: {
-                url: absoluteUrl,
-                headers: req.headers,
-                method: req.method
-            }
-        });
+        const requestState = await clerkClient.authenticateRequest(new Request(fullUrl, {
+            method: req.method,
+            headers: new Headers(req.headers)
+        }));
 
         const userId = requestState.isSignedIn ? requestState.toAuth().userId : null;
 
@@ -63,12 +60,20 @@ export default async function handler(req, res) {
             return res.status(200).send(JSON.stringify({ success: true }));
         }
 
+        if (req.method === 'DELETE') {
+            const { id } = req.query;
+            if (!id) return res.status(400).send(JSON.stringify({ error: "Missing ID" }));
+            await sql`DELETE FROM projects WHERE id = ${id} AND user_id = ${userId}`;
+            return res.status(200).send(JSON.stringify({ success: true }));
+        }
+
         return res.status(405).send(JSON.stringify({ error: "Method not allowed" }));
     } catch (error) {
         console.error("Projects API Error:", error);
         return res.status(500).send(JSON.stringify({
             error: "Internal Server Error",
-            message: error.message
+            message: error.message,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         }));
     }
 }

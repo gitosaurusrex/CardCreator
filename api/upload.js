@@ -21,15 +21,12 @@ export default async function handler(req, res) {
         const clerkClient = createClerkClient({ secretKey });
         const protocol = req.headers['x-forwarded-proto'] || 'https';
         const hostname = req.headers['host'];
-        const absoluteUrl = `${protocol}://${hostname}${req.url}`;
+        const fullUrl = new URL(req.url, `${protocol}://${hostname}`).toString();
 
-        const requestState = await clerkClient.authenticateRequest(req, {
-            request: {
-                url: absoluteUrl,
-                headers: req.headers,
-                method: req.method
-            }
-        });
+        const requestState = await clerkClient.authenticateRequest(new Request(fullUrl, {
+            method: req.method,
+            headers: new Headers(req.headers)
+        }));
 
         const userId = requestState.isSignedIn ? requestState.toAuth().userId : null;
         if (!userId) {
