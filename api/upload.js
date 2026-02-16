@@ -1,29 +1,24 @@
 import { sql } from '@vercel/postgres';
 import { getAuth } from '@clerk/clerk-sdk-node';
 
-export const config = {
-    api: {
-        bodyParser: {
-            sizeLimit: '4.5mb', // Vercel limit is 4.5MB total for serverless functions
-        },
-    },
-};
-
 export default async function handler(req, res) {
+    console.log(`[API/upload] Request: ${req.method}`);
+
     try {
         // 1. Verify Authentication
-        let userId;
+        let authState;
         try {
-            const auth = getAuth(req);
-            userId = auth.userId;
+            authState = getAuth(req);
+            if (!authState || !authState.userId) {
+                console.error("[API/upload] No userId found in auth state");
+                return res.status(401).json({ error: "Unauthorized" });
+            }
         } catch (authError) {
-            console.error("Upload Auth Error:", authError);
+            console.error("[API/upload] Clerk Auth Error:", authError);
             return res.status(401).json({ error: "Authentication failed" });
         }
 
-        if (!userId) {
-            return res.status(401).json({ error: "Unauthorized" });
-        }
+        const userId = authState.userId;
 
         if (req.method !== 'POST') {
             return res.status(405).json({ error: 'Method not allowed' });
@@ -34,46 +29,26 @@ export default async function handler(req, res) {
             return res.status(400).json({ error: "Missing required fields" });
         }
 
-        // 2. Ensure table exists
-        try {
-            await sql`
-                CREATE TABLE IF NOT EXISTS images (
-                    id TEXT PRIMARY KEY,
-                    user_id TEXT NOT NULL,
-                    data TEXT NOT NULL,
-                    content_type TEXT NOT NULL,
-                    file_name TEXT,
-                    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-                );
-            `;
-        } catch (dbInitError) {
-            console.error("Image Table Init Error:", dbInitError);
-            // We continue as it might already exist and it's just a permission issue on CREATE TABLE
-        }
-
-        // 3. Generate a simple unique ID
+        // 2. Store in DB
         const id = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-
-        // 4. Store in DB
         try {
             await sql`
                 INSERT INTO images (id, user_id, data, content_type, file_name)
                 VALUES (${id}, ${userId}, ${data}, ${contentType}, ${fileName || 'unnamed'})
             `;
-        } catch (insertError) {
-            console.error("Image Insert Error:", insertError);
-            return res.status(500).json({ error: "Database save failed", message: insertError.message });
+
+            return res.status(200).json({
+                id,
+                url: `/api/image?id=${id}`,
+                success: true
+            });
+        } catch (dbError) {
+            console.error("[API/upload] DB Insert Error:", dbError);
+            return res.status(500).json({ error: "Database save failed", message: dbError.message });
         }
 
-        // 5. Return the URL
-        return res.status(200).json({
-            id,
-            url: `/api/image?id=${id}`,
-            success: true
-        });
-
     } catch (error) {
-        console.error("Upload Handler Error:", error);
+        console.error("[API/upload] Global Handler Error:", error);
         return res.status(500).json({
             error: "Internal Server Error",
             message: error.message

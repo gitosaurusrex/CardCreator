@@ -250,12 +250,12 @@ function App() {
         if (res.ok) {
           setSaveStatus('saved');
         } else {
-          const errData = await res.json().catch(() => ({}));
-          console.error("Cloud save failed:", errData);
+          const text = await res.text();
+          console.error(`Cloud save failed (${res.status}):`, text);
           setSaveStatus('error');
         }
       } catch (err) {
-        console.warn("Cloud sync paused:", err);
+        console.warn("Cloud sync error/paused:", err);
         setSaveStatus('error');
       }
     }, 1500);
