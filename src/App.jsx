@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Printer, Columns2, Rows2, Image as ImageIcon, Palette, Type, Download, Upload, Bold, Italic, Palette as ColorIcon, FolderOpen, ExternalLink, X, FileJson, Clock, Lock, Cloud, Check, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Printer, Columns2, Rows2, Image as ImageIcon, Palette, Type, Bold, Italic, Palette as ColorIcon, FolderOpen, ExternalLink, X, Clock, Lock, Cloud, Check, AlertCircle } from 'lucide-react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Color } from '@tiptap/extension-color';
@@ -161,31 +161,6 @@ const ProjectSelector = ({ projects, onSelect, onCreate, onDelete, onImport }) =
             </div>
           </div>
         ))}
-
-        <label className="project-card new-project cursor-pointer">
-          <FileJson size={40} />
-          <span className="font-bold mt-2">Import Project</span>
-          <input
-            type="file"
-            accept=".json"
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files[0];
-              if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                  try {
-                    const data = JSON.parse(event.target.result);
-                    onImport(data, file.name.replace('.json', ''));
-                  } catch (err) {
-                    alert('Invalid project file');
-                  }
-                };
-                reader.readAsText(file);
-              }
-            }}
-          />
-        </label>
       </div>
     </div>
   );
@@ -198,7 +173,6 @@ function App() {
   const [cards, setCards] = useState([INITIAL_CARD]);
   const [activeCardId, setActiveCardId] = useState(INITIAL_CARD.id);
   const [universalConfig, setUniversalConfig] = useState(false);
-  const [exportName, setExportName] = useState('tilemaker-cards');
   const [saveStatus, setSaveStatus] = useState('saved'); // 'saved', 'saving', 'error'
 
 
@@ -235,7 +209,6 @@ function App() {
   useEffect(() => {
     if (activeProject) {
       setCards(activeProject.cards);
-      setExportName(activeProject.exportName || 'tilemaker-cards');
       setActiveCardId(activeProject.cards[0]?.id || INITIAL_CARD.id);
     }
   }, [currentProjectId]);
@@ -278,7 +251,7 @@ function App() {
     if (currentProjectId) {
       setProjects(prev => prev.map(p =>
         p.id === currentProjectId
-          ? { ...p, cards, exportName, lastModified: Date.now() }
+          ? { ...p, cards, lastModified: Date.now() }
           : p
       ));
     }
@@ -289,7 +262,6 @@ function App() {
       id: Date.now(),
       name: `Untitled Project ${projects.length + 1}`,
       cards: [INITIAL_CARD],
-      exportName: 'tilemaker-cards',
       lastModified: Date.now()
     };
     setProjects([newProject, ...projects]);
@@ -302,23 +274,9 @@ function App() {
     }
   };
 
-  const importProject = (importedCards, name) => {
-    const newProject = {
-      id: Date.now(),
-      name: name || `Imported Project ${projects.length + 1}`,
-      cards: Array.isArray(importedCards) ? importedCards : [INITIAL_CARD],
-      exportName: name || 'tilemaker-cards',
-      lastModified: Date.now()
-    };
-    setProjects([newProject, ...projects]);
-    setCurrentProjectId(newProject.id);
-  };
 
   const activeCard = cards.find(c => c.id === activeCardId) || cards[0];
 
-  useEffect(() => {
-    document.title = exportName || 'CardCreator';
-  }, [exportName]);
 
   const UNIVERSAL_KEYS = [
     'titleFont', 'titleSize', 'textFont', 'textSize',
@@ -410,35 +368,6 @@ function App() {
     }
   };
 
-  const exportToJson = (customCards, customName) => {
-    const dataStr = JSON.stringify(customCards || cards, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-    const name = customName || exportName || 'tilemaker-cards';
-    const fileName = name.endsWith('.json') ? name : `${name}.json`;
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', fileName);
-    linkElement.click();
-  };
-
-  const importFromJson = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        try {
-          const importedCards = JSON.parse(event.target.result);
-          if (Array.isArray(importedCards)) {
-            setCards(importedCards);
-            setActiveCardId(importedCards[0].id);
-          }
-        } catch {
-          alert('Failed to import JSON file. Please make sure it is a valid export.');
-        }
-      };
-      reader.readAsText(file);
-    }
-  };
 
   const getCardStyles = (card) => {
     return {
@@ -518,7 +447,6 @@ function App() {
                 });
               } catch (err) { }
             }}
-            onImport={importProject}
           />
         ) : (
           <div className="app-container no-print">
@@ -563,26 +491,7 @@ function App() {
                     className="bg-transparent border-none text-xs font-bold text-gray-400 focus:text-blue-500 outline-none w-32"
                     title="Rename Project"
                   />
-                  <input
-                    type="text"
-                    value={exportName}
-                    onChange={(e) => setExportName(e.target.value)}
-                    placeholder="Export Name..."
-                    className="export-input !h-8 !py-1 !px-3 !text-[11px] !w-32"
-                    title="Export Filename"
-                  />
                 </div>
-                <button
-                  onClick={() => exportToJson()}
-                  className="close-project-btn"
-                  title="Export to JSON"
-                >
-                  <Download size={18} /> Export
-                </button>
-                <label className="close-project-btn cursor-pointer" title="Import from JSON">
-                  <Upload size={18} /> Import
-                  <input type="file" accept=".json" onChange={importFromJson} className="hidden" />
-                </label>
                 <button
                   onClick={closeProject}
                   className="close-project-btn"
