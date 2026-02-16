@@ -41,7 +41,6 @@ export default async function handler(req, res) {
                 id: r.id,
                 name: r.name,
                 cards: r.cards,
-                exportName: r.export_name,
                 lastModified: r.last_modified
             }));
             return res.status(200).json(formattedRows);
@@ -49,7 +48,7 @@ export default async function handler(req, res) {
 
         // 4. POST: Save/Update with ownership check
         if (req.method === 'POST') {
-            const { id, name, cards, exportName } = req.body;
+            const { id, name, cards } = req.body;
             if (!id || !name || !cards) {
                 return res.status(400).json({ error: "Missing required fields" });
             }
@@ -57,11 +56,10 @@ export default async function handler(req, res) {
             // Upsert only if user_id matches or it's a new row
             await client.sql`
         INSERT INTO projects (id, user_id, name, cards, export_name, last_modified)
-        VALUES (${id.toString()}, ${userId}, ${name}, ${JSON.stringify(cards)}, ${exportName}, NOW())
+        VALUES (${id.toString()}, ${userId}, ${name}, ${JSON.stringify(cards)}, NULL, NOW())
         ON CONFLICT (id) DO UPDATE SET
           name = EXCLUDED.name,
           cards = EXCLUDED.cards,
-          export_name = EXCLUDED.export_name,
           last_modified = NOW()
         WHERE projects.user_id = ${userId}
       `;
